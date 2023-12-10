@@ -3159,7 +3159,7 @@ void RasterizerGLES1::_add_geometry( const Geometry* p_geometry, const InstanceD
 
 			for(int i=0;i<light_count;i++) {
 
-				e->lights[i]=lights[i]->sort_key;			
+				e->lights[i]=lights[i]->sort_key;
 			}
 
 			e->light_count=light_count;
@@ -3255,7 +3255,7 @@ void RasterizerGLES1::_set_cull(bool p_front,bool p_reverse_cull) {
 
 
 void RasterizerGLES1::_setup_fixed_material(const Geometry *p_geometry,const Material *p_material) {
-	
+
 	if (!shadow) {
 
 		GLenum side = GL_FRONT_AND_BACK;
@@ -3268,7 +3268,7 @@ void RasterizerGLES1::_setup_fixed_material(const Geometry *p_geometry,const Mat
 			  diffuse_color.b,
 			   diffuse_color.a
 		};
-		
+
 		///ambient @TODO offer global ambient group option
 		if (current_env && current_env->fx_enabled[VS::ENV_FX_AMBIENT_LIGHT]) {
 			Color ambcolor = current_env->fx_param[VS::ENV_FX_PARAM_AMBIENT_LIGHT_COLOR];
@@ -3376,7 +3376,7 @@ void RasterizerGLES1::_setup_material(const Geometry *p_geometry,const Material 
 
 					//glBlendEquation(GL_FUNC_SUBTRACT);
 					glBlendFunc(GL_ZERO,GL_ONE_MINUS_SRC_COLOR);
-					
+
 				 } break;
 				case VS::MATERIAL_BLEND_MODE_MUL: {
 					//glBlendEquation(GL_FUNC_ADD);
@@ -3385,26 +3385,28 @@ void RasterizerGLES1::_setup_material(const Geometry *p_geometry,const Material 
 				} break;
 				case VS::MATERIAL_BLEND_MODE_PREMULT_ALPHA: {
 					//glBlendEquation(GL_FUNC_ADD);
-					glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
-					
+					// glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
+					glEnable(GL_ALPHA_TEST);
+					glAlphaFunc(GL_GEQUAL, 0.1f);
+
 				} break;
-				
-				
+
+
 			}
 			blend_mode=p_material->blend_mode;
 		}
-		
+
 		if (texcoord_mode!=p_material->texcoord_mode[0]) {
 			switch(p_material->texcoord_mode[0]) {
-				
+
 				case VS::FIXED_MATERIAL_TEXCOORD_UV: {
-					
+
 						glDisable(GL_TEXTURE_GEN_S);
 						glDisable(GL_TEXTURE_GEN_T);
 				} break;
-				
+
 				case VS::FIXED_MATERIAL_TEXCOORD_SPHERE: {
-					
+
 					    glTexGeni(GL_S,GL_TEXTURE_GEN_MODE,GL_SPHERE_MAP);
 						glTexGeni(GL_T,GL_TEXTURE_GEN_MODE,GL_SPHERE_MAP);
 
@@ -3425,7 +3427,7 @@ void RasterizerGLES1::_setup_material(const Geometry *p_geometry,const Material 
 		}
 
 	}
-	
+
 	bool current_depth_write=p_material->depth_draw_mode!=VS::MATERIAL_DEPTH_DRAW_ALWAYS; //broken
 	bool current_depth_test=!p_material->flags[VS::MATERIAL_FLAG_ONTOP];
 
@@ -3939,7 +3941,7 @@ Error RasterizerGLES1::_setup_geometry(const Geometry *p_geometry, const Materia
 //				if (!gl_texcoord_shader[i])
 //					continue;
 				bool skip_color_array = i == VS::ARRAY_COLOR && !p_material->fixed_flags[VisualServer::FIXED_MATERIAL_FLAG_USE_COLOR_ARRAY];
-	
+
 				if (ad.size==0 || i==VS::ARRAY_BONES || i==VS::ARRAY_WEIGHTS || skip_color_array || gl_client_states[i]==0 ) {
 
 					if (gl_texcoord_index[i] != -1) {
@@ -4359,7 +4361,7 @@ void RasterizerGLES1::_render_list_forward(RenderList *p_render_list,bool p_reve
 
 // todo: gl1 version
 void RasterizerGLES1::_draw_tex_bg() {
-	
+
 }
 
 
@@ -4390,7 +4392,7 @@ void RasterizerGLES1::end_scene() {
 	}
 
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);*/
-	
+
 	bool draw_tex_background=false;
 
 	if (current_env) {
@@ -4450,7 +4452,7 @@ void RasterizerGLES1::end_scene() {
 		material_shader.set_conditional( MaterialShaderGLES1::USE_FOG,true);
 		*/
 	//}
-	
+
 	// fog!
 	if (current_env && current_env->fx_enabled[VS::ENV_FX_FOG]) {
 
@@ -4462,7 +4464,7 @@ void RasterizerGLES1::end_scene() {
 		//material_shader.set_uniform(MaterialShaderGLES2::FOG_PARAMS,Vector3(from,zf,curve));
 		//material_shader.set_uniform(MaterialShaderGLES2::FOG_COLOR_BEGIN,Vector3(col_begin.r,col_begin.g,col_begin.b));
 		//material_shader.set_uniform(MaterialShaderGLES2::FOG_COLOR_END,Vector3(col_end.r,col_end.g,col_end.b));
-		
+
 		glEnable(GL_FOG);
 		glFogf(GL_FOG_MODE,GL_EXP2);
 		glFogf(GL_FOG_DENSITY,curve);
@@ -4477,11 +4479,11 @@ void RasterizerGLES1::end_scene() {
 	for(int i=0;i<MAX_HW_LIGHTS;i++) {
 
 		if (i < directional_light_count) {
-			
+
 			glEnable(GL_LIGHT0+i);
 			_setup_light(directional_lights[i],i);
 		} else {
-			
+
 			glDisable(GL_LIGHT0+i);
 		}
 	}
@@ -4520,18 +4522,18 @@ void RasterizerGLES1::end_scene() {
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
 	_render_list_forward(&opaque_render_list);
-	
+
 	if (draw_tex_background) {
-		
+
 		glDisable(GL_FOG); // disable fog if the background is being drawn
 		//most 3D vendors recommend drawing a texture bg or skybox here,
 		//after opaque geometry has been drawn
 		//so the zbuffer can get rid of most pixels
 		_draw_tex_bg();
 	}
-	
+
 	if (current_env && current_env->fx_enabled[VS::ENV_FX_FOG]) {
-		
+
 		glEnable(GL_FOG);	// re-enable fog
 	}
 
@@ -4760,8 +4762,8 @@ void RasterizerGLES1::end_frame() {
 
 		//copy to main bufferz
 		glEnable(GL_TEXTURE_2D);
-		
-		glBindTexture(GL_TEXTURE_2D,framebuffer.color);		
+
+		glBindTexture(GL_TEXTURE_2D,framebuffer.color);
 		glBegin(GL_QUADS);
 		glTexCoord2f(0,0);
 		glVertex2f(-1,-1);
@@ -4803,19 +4805,19 @@ void RasterizerGLES1::reset_state() {
 
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);	
+	glEnable(GL_BLEND);
 //	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 //	glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 	canvas_blend=VS::MATERIAL_BLEND_MODE_MIX;
 	glLineWidth(1.0);
 	glDisable(GL_LIGHTING);
-	
+
 	// need to reset this, otherwise it forgets when texture gen is disabled
 	texcoord_mode=0;
 	glDisable(GL_TEXTURE_GEN_S);
 	glDisable(GL_TEXTURE_GEN_T);
-	
+
 	// turn off fog
 	glDisable(GL_FOG);
 }
@@ -4858,22 +4860,22 @@ void RasterizerGLES1::canvas_set_blend_mode(VS::MaterialBlendMode p_mode) {
 		case VS::MATERIAL_BLEND_MODE_ADD: {
 			//glBlendEquation(GL_FUNC_ADD);
 			glBlendFunc(GL_ONE,GL_ONE);
-			
+
 		} break;
 		case VS::MATERIAL_BLEND_MODE_SUB: {
 			//glBlendEquation(GL_FUNC_SUBTRACT);
 			glBlendFunc(GL_ZERO,GL_ONE_MINUS_SRC_COLOR);
-			
+
 		} break;
 		case VS::MATERIAL_BLEND_MODE_MUL: {
 			//glBlendEquation(GL_FUNC_ADD);
 			glBlendFunc(GL_DST_COLOR,GL_ZERO);
-			
+
 		} break;
 		case VS::MATERIAL_BLEND_MODE_PREMULT_ALPHA: {
 			//glBlendEquation(GL_FUNC_ADD);
 			glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);
-			
+
 		} break;
 
 	}
@@ -5143,7 +5145,7 @@ void RasterizerGLES1::canvas_draw_polygon(int p_vertex_count, const int* p_indic
 		glColor4f(m.r, m.g, m.b, m.a);
 	} else if (!p_colors) {
 		glColor4f(1, 1, 1, canvas_opacity);
-	} 
+	}
 	else
 	{
 		do_colors=true;
